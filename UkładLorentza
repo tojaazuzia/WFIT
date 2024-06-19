@@ -1,0 +1,81 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+from scipy.integrate import odeint
+
+
+
+sigma = 10
+beta = 8/3
+r = 100 #r - jest zmienną, dla r=28 przejawia się chaos
+#charakterystyczne sytuacje:
+# r=1 - układ dąży do jednego punktu stałego
+# r=14 - powstają dwa atraktory
+# r = 99,96 - układ staje się układ staje się węzłem torusowym -  T(3,2) - nazwa torusa,
+def uklad_rownan(vector, t, sigma, beta, r):
+    x, y, z = vector
+
+    d_vector = [
+        sigma*(y - x),
+        x*(r - z) - y,
+        x*y - beta*z
+    ]
+    return d_vector
+
+pozycja_0_1 = [0.0, 1.0, 1.0] # Reprezentuje 1. pozycję w t = 0
+pozycja_0_2 = [20.0, 6.1, 21.0] # Reprezentuje 2. pozycję w t = 0
+
+punkty_czasowe = np.linspace(0, 40, 1001)
+
+# trajektoria układu Lorenza rozpoczynająca się w punkcie początkowym pozycje_1
+pozycje_1 = odeint(uklad_rownan, pozycja_0_1, punkty_czasowe, args=(sigma, beta, r))
+x_sol_1, y_sol_1, z_sol_1 = pozycje_1[:, 0], pozycje_1[:, 1], pozycje_1[:, 2]
+
+# trajektoria układu Lorenza rozpoczynająca się w punkcie początkowym pozycje_2
+pozycje_2 = odeint(uklad_rownan, pozycja_0_2, punkty_czasowe, args=(sigma, beta, r))
+x_sol_2, y_sol_2, z_sol_2 = pozycje_2[:, 0], pozycje_2[:, 1], pozycje_2[:, 2]
+
+
+
+fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+
+lorenz_plt_1, = ax.plot(x_sol_1, y_sol_1, z_sol_1, 'red', label=f'Pozycja 0 dla 1.: {pozycja_0_1}')
+lorenz_plt_2, = ax.plot(x_sol_2, y_sol_2, z_sol_2, 'blue', label=f'Pozycja 0 dla 2.: {pozycja_0_2}')
+
+plt.legend()
+
+
+
+def animacja(frame):
+    dolny_lim = max(0, frame - 100)
+
+    x_biezacy_1 = x_sol_1[dolny_lim:frame+1]
+    y_biezacy_1 = y_sol_1[dolny_lim:frame+1]
+    z_biezacy_1 = z_sol_1[dolny_lim:frame+1]
+
+    x_biezacy_2 = x_sol_2[dolny_lim:frame+1]
+    y_biezacy_2 = y_sol_2[dolny_lim:frame+1]
+    z_biezacy_2 = z_sol_2[dolny_lim:frame+1]
+
+    lorenz_plt_1.set_data(x_biezacy_1, y_biezacy_1)
+    lorenz_plt_1.set_3d_properties(z_biezacy_1)
+
+    lorenz_plt_2.set_data(x_biezacy_2, y_biezacy_2)
+    lorenz_plt_2.set_3d_properties(z_biezacy_2)
+
+    return lorenz_plt_1, lorenz_plt_2
+#wyswietlenie niektórych rozwiazan
+def print_values():
+    for i, t in enumerate(punkty_czasowe):
+        if i % 50 == 0:  # Wyświetlaj co 5 jednostek czasu
+            print(f"t = {t:.2f}")
+            print(f"Pozycja 1: x = {x_sol_1[i]:.2f}, y = {y_sol_1[i]:.2f}, z = {z_sol_1[i]:.2f}")
+            print(f"Pozycja 2: x = {x_sol_2[i]:.2f}, y = {y_sol_2[i]:.2f}, z = {z_sol_2[i]:.2f}")
+            print("---")
+
+print_values()
+
+animacja1 = FuncAnimation(fig, animacja, frames=len(punkty_czasowe), interval=25, blit=False)
+
+plt.show()
